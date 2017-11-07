@@ -9,14 +9,14 @@ const isAuthenticated = () => {
 };
 
 const base = "";
-const PRIVATE_ROOT = base+'/prd/dashboard';
+const PRIVATE_ROOT = base+'/dashboard';
 const PUBLIC_ROOT = base+'/';
 
 const AuthRoute = ({component, ...props}) => {
   const { isPrivate } = component;
   if (isAuthenticated()) {
     //User is Authenticated
-    if (isPrivate==undefined) {
+    if (isPrivate==true) {
       //If the route is private the user may proceed.
       return <Route { ...props } component={ component } />;
     }
@@ -27,7 +27,7 @@ const AuthRoute = ({component, ...props}) => {
   }
   else {
     //User is not Authenticated
-    if (isPrivate ==undefined) {
+    if (isPrivate ==true) {
 
       //If the route is private the user is redirected to the app's public root.
       return <Redirect to={ PUBLIC_ROOT} />;

@@ -45,7 +45,7 @@ export default (state = defaultState, action) => {
     case 'REGISTER':
       return {
         ...state,
-        redirectTo: action.error || action.doNotNavigate ? null : '/prd/dashboard',
+        redirectTo: action.error || action.doNotNavigate ? null : '/dashboard',
         token: action.error ? null : action.payload.access_token,
         currentUser: action.error ? null : action.payload.UserRequest
       };
