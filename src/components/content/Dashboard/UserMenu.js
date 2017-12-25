@@ -10,16 +10,54 @@ class UserMenu extends Component {
     super(props);
     this.state={
       userId:"",
-      msg:""
+      msg:"",
+      myRequests:[]
     }
   }
 
   componentDidMount()
   {
+    let myRequests=[];
+    let self=this;
+
+    var uid=JSON.parse(window.localStorage.getItem("userRequest")).uid;
       $(document).ready(function(){
       // the "href" attribute of the modal trigger must specify the modal ID that wants to be triggered
       $('.modal').modal();
     });
+
+    // console.log(uid);
+
+    firebaseRef.child("user-info/"+uid+"/"+"requests").once("value").then((snapshot)=>{
+      // console.log(snapshot.val());
+      let object =snapshot.val();
+      for (var variable in object) {
+        if(object[variable].isAproved==false)
+        {
+          myRequests.push({...object[variable],"userId":variable});
+        }
+      }
+      self.setState({myRequests});
+
+    })
+
+
+  }
+
+  signOut = (e) => {
+    e.preventDefault();
+    let {logout}=this.props;
+    firebase.auth().signOut().then(function() {
+      // Sign-out successful.
+      // localStorage.setItem("token","");
+      // localStorage.setItem("userRequest","");
+      localStorage.clear();
+      logout();
+    }).catch(function(error) {
+      // An error happened.
+      console.log(error);
+    });
+
   }
 
   sendRequest=(e)=>{
@@ -31,26 +69,24 @@ class UserMenu extends Component {
     firebaseRef.child("user-emailToUserId/"+(userId || '').split(".").join(",")).once('value').then(function(snapshot) {
        var res=snapshot.val();
        var uid=firebase.auth().currentUser.uid;
+       var name=firebase.auth().currentUser.displayName;
        if (res && res!=uid) {
             // call to check if you have already having contact
             firebaseRef.child("user-info/"+uid+"/contact-list/"+res).once("value").then((snapshotTwo)=>{
               var resTwo=snapshotTwo.val();
               if (!resTwo) {
                 //call to check  if you have already sent a request or not
-                firebaseRef.child("user-info/"+res+"/requests").orderByChild("userId").equalTo(uid).once("value").then((snapshotThreee)=>{
+                firebaseRef.child("user-info/"+res+"/requests/"+uid).once("value").then((snapshotThreee)=>{
                   var resThree=snapshotThreee.val();
                   if (!resThree) {
                     var postData = {
-                    "userId":uid,
                     "timeStamp":new Date().getTime(),
                     "isAproved":false,
+                    "name":name,
                    };
 
-                   // Get a key for a new Post.
-                   var newPostKey = firebaseRef.child('/user-info/' + res+"/requests/").push().key;
-
-                    var updates = {};
-                    updates['/user-info/' + res+"/requests/"+newPostKey] = postData;
+                  var updates = {};
+                    updates['/user-info/' + res+"/requests/"+uid] = postData;
                     //update the request info
                     firebaseRef.update(updates).then((res)=>{
                       self.setState({msg:"Request has sent successfully"})
@@ -59,6 +95,7 @@ class UserMenu extends Component {
                       self.setState({msg:"You already sent a request"});
                   }
                 })
+
               }
               else {
                 self.setState({msg:"You have connected to this person"});
@@ -75,45 +112,38 @@ class UserMenu extends Component {
     }).catch((error)=>{
       console.log(error);
     });
+  }
 
 
-    // ref.orderByChild("email").equalTo("userId").on("child_added", function(snapshot) {
-    //     console.log(snapshot.key);
-    // })
-    //
-    // firebase.auth().fetchProvidersForEmail(userId)
-    //   .then(providers => {
-    //     if (providers.length === 0) {
-    //       // this email hasn't signed up yet
-    //       self.setState({msg:"User id not found"})
-    //     } else {
-    //       // has signed up
-    //       console.log(firebase.auth().currentUser.uid);
-    //
-    //       var postData = {
-    //         "userId":firebase.auth().currentUser.uid,
-    //         "timeStamp":new Date().getTime(),
-    //         "isAproved":false,
-    //       };
-    //
-    //       // // Get a key for a new Post.
-    //       // var newPostKey = firebaseRef.child('/user-info/' + postData.userId+"/requests/").push().key;
-    //       //
-    //       //   var updates = {};
-    //       //   updates['/user-info/' + postData.userId+"/requests/"+newPostKey] = postData;
-    //       //
-    //       //   firebaseRef.update(updates).then((res)=>{
-    //       //     self.setState({msg:"Request has sent successfully"})
-    //       //   });
-    //
-    //     }
-    //   });
+  accpectRequest=(e,senderId)=>{
+    e.preventDefault();
+    let self=this;
+
+    var postData = {
+    "timeStamp":new Date().getTime()
+   };
+
+  var updates = {};
+    updates['/user-info/' + JSON.parse(window.localStorage.getItem("userRequest")).uid+"/contact-list/"+senderId] = postData;
+    updates['/user-info/' + senderId+"/contact-list/"+JSON.parse(window.localStorage.getItem("userRequest")).uid] = postData;
+    // updates['/user-info/' + JSON.parse(window.localStorage.getItem("userRequest")).uid+"/requests/"+senderId] = {
+    //   isAproved:true
+    // };
+
+
+    //update the request info
+    firebaseRef.update(updates).then((res)=>{
+      // self.setState({msg:"Request has sent successfully"})
+      firebaseRef.child('/user-info/'+ JSON.parse(window.localStorage.getItem("userRequest")).uid+'/requests/'+senderId).update({isAproved:true});
+
+      alert("Request as accpected")
+    });
   }
 
   render()
   {
-    let {userId,msg}=this.state;
-    let  {sendRequest}=this;
+    let {userId,msg,myRequests}=this.state;
+    let  {sendRequest,signOut,accpectRequest}=this;
     let self=this;
     return (
       <div>
@@ -135,7 +165,7 @@ class UserMenu extends Component {
                     <label htmlFor="icon_prefix">user id</label>
                   </div>
                   <div className="input-field col s4">
-                    <button className="btn waves-effect waves-light" type="submit" name="action" onClick={(e)=>{
+                    <button className="btn waves-effect waves-light" type="button" name="action" onClick={(e)=>{
                       sendRequest(e)
                     }}>Send
                       <i className="material-icons right">send</i>
@@ -146,18 +176,36 @@ class UserMenu extends Component {
             </div>
             {<span className={msg=="Request has sent successfully"?"teal":"red"}>{msg}</span>}
           </div>
-          {/*<div className="modal-footer">
-            <a href="#!" className="modal-action modal-close waves-effect waves-green btn-flat">Agree</a>
-          </div>*/}
+          <div className="modal-footer">
+            <a href="#" className="modal-action modal-close waves-effect waves-green btn-flat">Close</a>
+          </div>
         </div>
 
         <div id="my-requests" className="modal bottom-sheet">
           <div className="modal-content">
             <h4>My Reqeusts</h4>
-            <p>A bunch of text</p>
+            {myRequests.length>0?
+              myRequests.map((item,key)=>{
+                  return (
+                    <div key={key} className="row">
+                        <div className="col s6">
+                          {/*  <i className="material-icons prefix">account_circle</i>*/}
+                            {item.name}
+                        </div>
+                        <div className="col s4">
+                          <button className="btn waves-effect waves-light" type="button" name="action" onClick={(e)=>{
+                            accpectRequest(e,item.userId);
+                          }}>Accept
+                            <i className="material-icons right">check</i>
+                          </button>
+                        </div>
+                    </div>
+                  )
+                }):"No requests"
+            }
           </div>
           <div className="modal-footer">
-            <a href="#!" className="modal-action modal-close waves-effect waves-green btn-flat">Agree</a>
+            <a href="#" className="modal-action modal-close waves-effect waves-green btn-flat">Close</a>
           </div>
         </div>
 
@@ -166,6 +214,9 @@ class UserMenu extends Component {
           <ul id="dropdown1" className="dropdown-content">
              <li><a className="modal-trigger" href="#send-request">Send Request</a></li>
              <li><a className="modal-trigger" href="#my-requests">My Requests</a></li>
+             <li><a href="#" onClick={(e)=>{
+               signOut(e)
+             }}>Logout</a></li>
           </ul>
       </div>
     )
@@ -181,7 +232,7 @@ const mapStateToProps = state => ({
 
 
 const mapDispatchToProps = dispatch => ({
-
+  logout:(tenantId)=>dispatch({type:'LOGOUT'})
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(UserMenu);

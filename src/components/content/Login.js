@@ -35,24 +35,37 @@ class Authenticate extends Component {
           // The signed-in user info.
           var user = result.user;
 
-            var updates = {};
-            updates['/user-info/' + result.user.uid] =   {
-                "displayName":result.user.displayName,
-                "phoneNumber":result.user.phoneNumber,
-                "photoURL":result.user.photoURL,
-                "email":result.user.email,
-                "additionalUserInfo":result.additionalUserInfo
-              };
+          firebaseRef.child("user-info/"+user.uid).once("value").then((snapshot)=>{
+            var res=snapshot.val();
+            if (res) {
+              localStorage.setItem("token", result.credential.accessToken);
+              localStorage.setItem("userRequest", JSON.stringify(result.user));
+              login(false, result.credential.accessToken, result.user, true);
+              //  })
+             } else {
+              var updates = {};
+              updates['/user-info/' + result.user.uid] =   {
+                  "displayName":result.user.displayName,
+                  "phoneNumber":result.user.phoneNumber,
+                  "photoURL":result.user.photoURL,
+                  "email":result.user.email,
+                  "additionalUserInfo":result.additionalUserInfo
+                };
 
-            updates['/user-emailToUserId/'+ (result.user.email || '').split(".").join(",")]= result.user.uid
+              updates['/user-emailToUserId/'+ (result.user.email || '').split(".").join(",")]= result.user.uid
 
-            firebaseRef.update(updates).then((res)=>{
-              // firebaseRef.child('/user-emailToUserId/').child((result.user.email || '').replace(".",",")).set({"userId":result.user.uid}).then((res)=>{
-                localStorage.setItem("token", result.credential.accessToken);
-                localStorage.setItem("userRequest", JSON.stringify(result.user));
-                login(false, result.credential.accessToken, result.user, true);
-            //  })
-            });
+              firebaseRef.update(updates).then((res)=>{
+                // firebaseRef.child('/user-emailToUserId/').child((result.user.email || '').replace(".",",")).set({"userId":result.user.uid}).then((res)=>{
+                  localStorage.setItem("token", result.credential.accessToken);
+                  localStorage.setItem("userRequest", JSON.stringify(result.user));
+                  login(false, result.credential.accessToken, result.user, true);
+              //  })
+              });
+            }
+
+          });
+
+
 
 
           }).catch(function(error) {

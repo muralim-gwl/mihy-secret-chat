@@ -15,6 +15,8 @@ import { connect } from 'react-redux';
 import { withRouter } from 'react-router';
 import router from './router';
 
+import firebase from '../firebase';
+
 
 
 // import Dashboard from './Dashboard';
@@ -28,6 +30,21 @@ class App extends Component {
             this.props.history.replace(nextProps.redirectTo);
             this.props.onRedirect();
       }
+ }
+ componentWillMount()
+ {
+   let {onLoad,logout}=this.props;
+   firebase.auth().onAuthStateChanged(function(user) {
+     if (user) {
+        // User is signed in.
+        // onLoad(user,user)
+        console.log(user);
+     } else {
+      // No user is signed in.
+      localStorage.clear();
+      logout();
+     }
+   });
  }
   render() {
     return (
@@ -114,7 +131,8 @@ const mapDispatchToProps = dispatch => ({
     },
     setActionList:(actionList)=>{
       dispatch({type:"SET_ACTION_LIST",actionList});
-    }
+    },
+    logout:(tenantId)=>dispatch({type:'LOGOUT'})
 });
 
 

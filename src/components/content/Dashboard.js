@@ -25,6 +25,18 @@ class Dashboard extends Component {
     }
   }
 
+  componentWillReceiveProps(nextProps)
+  {
+    if (this.props.location.pathname!=nextProps.location.pathname) {
+        this.initChat(this.props,nextProps)
+    }
+  }
+
+  initChat()
+  {
+    
+  }
+
   componentDidMount()
   {
     let self=this;
@@ -61,36 +73,9 @@ class Dashboard extends Component {
                       !userId?<Welcome/>:<ChatBoard userId={userId}/>
                      }
                    </div>
-                {/*<Switch>
-                  <Route exact path={base+"/dashboard"} component={Welcome} />
-                  <Route exact path={base+"/messages/:userId"} component={ChatBoard} />
-                </Switch>*/}
                 </div>
               </div>
-        {/*<ul className="collection">
-            {messages.map((item,key)=>{
-              return (
-                <li key={key}><strong>{item.userId} :</strong> {item.msg} </li>
-              )
-            })}
-          </ul>
-          <div className="row">
-            <form className="col s12">
-              <div className="row">
-                <div className="input-field col s12">
-                  <textarea id="textarea1" value={message} onChange={(e)=>{
-                      this.setState({message:e.target.value});
-                  }} className="materialize-textarea"></textarea>
-                  <label htmlFor="textarea1">Textarea</label>
-                  <button className="btn waves-effect waves-light" type="button" name="action" onClick={(e)=>{
-                      send(e)
-                  }}>Send
-                    <i className="material-icons right">send</i>
-                  </button>
-                </div>
-              </div>
-            </form>
-           </div>*/}
+
           </div>
         );
       }
