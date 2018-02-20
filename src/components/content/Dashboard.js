@@ -34,7 +34,7 @@ class Dashboard extends Component {
 
   initChat()
   {
-    
+
   }
 
   componentDidMount()
@@ -62,12 +62,12 @@ class Dashboard extends Component {
     	return(
     			<div>
               <div className="row">
-                <div className="col m4">
+                <div className="col m4 s12">
                     <LeftContent/>
 
                 </div>
 
-                <div className="col m8">
+                <div className="col m8 s12">
                   <div className="card">
                      {
                       !userId?<Welcome/>:<ChatBoard userId={userId}/>
